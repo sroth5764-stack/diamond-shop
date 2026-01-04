@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SH Topup Shop</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; display: flex; justify-content: center; padding: 20px; }
+        .container { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #ffcc00; margin-bottom: 25px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; color: #bbb; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: #ffcc00; color: black; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #e6b800; }
+
+        /* Pop-up QR Code */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; text-align: center; color: black; width: 85%; max-width: 320px; position: relative; }
+        .modal-content h3 { margin-top: 0; color: #333; }
+        .modal-content img { width: 100%; border-radius: 12px; border: 1px solid #eee; margin: 15px 0; }
+        .close-btn { background: #ff4444; color: white; padding: 10px; border: none; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>SH Topup Shop</h2>
+    <form id="orderForm">
+        <label>User ID</label>
+        <input type="text" id="userId" placeholder="បញ្ចូល User ID" required>
+        
+        <label>Zone ID</label>
+        <input type="text" id="zoneId" placeholder="បញ្ចូល Zone ID" required>
+        
+        <label>ជ្រើសរើសហ្គេម</label>
+        <select id="game">
+            <option value="Mobile Legends">Mobile Legends</option>
+            <option value="Free Fire">Free Fire</option>
+        </select>
+        
+        <label>ជ្រើសរើសកញ្ចប់</label>
+        <select id="items" onchange="updatePrice()">
+            <option value="100 Diamonds" data-price="1$">100 Diamonds - 1$</option>
+            <option value="200 Diamonds" data-price="2$">200 Diamonds - 2$</option>
+            <option value="500 Diamonds" data-price="5$">500 Diamonds - 5$</option>
+        </select>
+        
+        <label>តម្លៃត្រូវបង់</label>
+        <input type="text" id="price" value="1$" readonly style="background: #333; color: #ffcc00; font-weight: bold;">
+        
+        <button type="submit">បញ្ជាទិញឥឡូវនេះ</button>
+    </form>
+</div>
+
+<div id="qrModal" class="modal">
+    <div class="modal-content">
+        <h3 id="qrTitle">បង់ប្រាក់ចំនួន 1$</h3>
+        <img id="qrImage" src="1usd.jpg" alt="QR Code">
+        <p style="font-size: 13px; color: #666;">សូមផ្ញើរូបថត Screenshot ការបង់ប្រាក់ចូល Telegram!</p>
+        <button class="close-btn" onclick="window.location.reload()">បិទផ្ទាំងនេះ</button>
+    </div>
+</div>
+
+<script>
+    // មុខងារសម្រាប់បង្ហាញតម្លៃស្វ័យប្រវត្តិពេលរើស Item
+    function updatePrice() {
+        const select = document.getElementById('items');
+        const price = select.options[select.selectedIndex].getAttribute('data-price');
+        document.getElementById('price').value = price;
+    }
+
+    // មុខងារពេលចុចប៊ូតុងបញ្ជាទិញ
+    document.getElementById('orderForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            userId: document.getElementById('userId').value,
+            zoneId: document.getElementById('zoneId').value,
+            game: document.getElementById('game').value,
+            items: document.getElementById('items').value,
+            price: document.getElementById('price').value
+        };
+
+        try {
+            // ១. ផ្ញើទិន្នន័យទៅ Server (Backend)
+            const response = await fetch('http://localhost:3000/api/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                // ២. កូដប្តូររូបភាព QR តាមតម្លៃ (លុបសញ្ញា $ ចេញយកតែលេខ)
+                const priceValue = formData.price.replace('$', ''); 
+                
+                // ៣. ប្តូរចំណងជើង និងប្រភពរូបភាព (ឧទាហរណ៍: 2usd.jpg)
+                document.getElementById('qrTitle').innerText = "បង់ប្រាក់ចំនួន " + formData.price;
+                document.getElementById('qrImage').src = priceValue + "usd.jpg"; 
+                
+                // ៤. បង្ហាញ Top-up
+                document.getElementById('qrModal').style.display = 'flex';
+            }
+        } catch (error) {
+            alert("សូមបើក server.js ជាមុនសិន!");
+        }
+    });
+</script>
+
+</body>
+</html>
